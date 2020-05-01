@@ -1,5 +1,5 @@
 [package]
-name = "minilp-wasm"
+name = "rust-minilp"
 version = "0.1.0"
 authors = ["Lukas Heidemann <lukas@heidemann.me>"]
 edition = "2018"
