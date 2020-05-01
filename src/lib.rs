@@ -90,11 +90,29 @@ fn to_solution(solution: &minilp::Solution, vars: &[minilp::Variable]) -> Soluti
 }
 
 #[derive(Clone, Debug, Serialize)]
-#[serde(tag = "type", content = "value")]
+#[serde(tag = "type")]
 #[serde(rename_all = "lowercase")]
 pub enum Return {
-    Success(Solution),
-    Error(Error)
+    Success { solution: Solution },
+    Error { error: Error },
+}
+
+impl Into<Return> for Error {
+    fn into(self) -> Return {
+        Return::Error { error: self }
+    }
+}
+
+impl Into<Return> for minilp::Error {
+    fn into(self) -> Return {
+        Return::Error { error: self.into() }
+    }
+}
+
+impl Into<Return> for Solution {
+    fn into(self) -> Return {
+        Return::Success { solution: self }
+    }
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -108,7 +126,10 @@ pub struct Problem {
 pub fn solve(problem: &JsValue) -> JsValue {
     let problem: Problem = match problem.into_serde() {
         Ok(problem) => problem,
-        Err(_) => return JsValue::from_serde(&Return::Error(Error::BadFormat)).unwrap()
+        Err(_) => {
+            let ret: Return = Error::BadFormat.into();
+            return JsValue::from_serde(&ret).unwrap()
+        }
     };
 
     let mut solver = minilp::Problem::new(problem.direction.into());
@@ -129,9 +150,9 @@ pub fn solve(problem: &JsValue) -> JsValue {
         )
     });
 
-    let ret = match solver.solve() {
-        Ok(solution) => Return::Success(to_solution(&solution, &solver_vars)),
-        Err(error) => Return::Error(error.into())
+    let ret: Return = match solver.solve() {
+        Ok(solution) => to_solution(&solution, &solver_vars).into(),
+        Err(error) => error.into()
     };
 
     JsValue::from_serde(&ret).unwrap()
