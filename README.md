@@ -6,7 +6,7 @@ A minimal JavaScript binding to the Rust
 # Example
 
 ```
-const minilp = require("@zrho/minilp-wasm");
+const minilp = require("@zrho/rust-minilp");
 
 console.log(minilp.solve({
   direction: "maximize",
